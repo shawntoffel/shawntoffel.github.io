@@ -1,0 +1,62 @@
+name: Deploy website
+
+on:
+  push:
+    branches: ["master"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install html-minifier
+        run: npm install html-minifier -g
+        
+      - name: Prepare output directory
+        run: |
+          mkdir public && \
+          cp -R images/ public/
+        
+      - name: Run minifier
+        run: |
+          html-minifier \
+            --collapse-whitespace \
+            --remove-comments \
+            --remove-optional-tags \
+            --remove-redundant-attributes \
+            --remove-script-type-attributes \
+            --minify-css true \
+            --minify-js true \
+            index.html > public/index.html
+            
+      - name: Create 404 page
+        run: echo -n "404" > ./public/404.html
+        
+      - name: Create CNAME file
+        run: echo -n "shawntoffel.com" > ./public/CNAME
+        
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+        
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './public'
+          
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
