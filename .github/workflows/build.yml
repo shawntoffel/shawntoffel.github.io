@@ -28,8 +28,7 @@ jobs:
         
       - name: Prepare output directory
         run: |
-          mkdir public && \
-          cp -R images/ public/
+          mkdir public
         
       - name: Run minifier
         run: |
